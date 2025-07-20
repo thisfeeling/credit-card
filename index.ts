@@ -1,15 +1,30 @@
-"use strict";
 // Helper para obtener elementos del DOM de forma tipada
-function qs(id) {
+function qs<T extends HTMLElement = HTMLElement>(id: string): T {
     const el = document.getElementById(id);
-    if (!el)
-        throw new Error(`Elemento con id '${id}' no encontrado`);
-    return el;
+    if (!el) throw new Error(`Elemento con id '${id}' no encontrado`);
+    return el as T;
 }
-const tarjetas = [];
-let tarjetaActual = null;
+
+const tarjetas: CreditCard[] = [];
+let tarjetaActual: CreditCard | null = null;
+
 class CreditCard {
-    constructor(userId, firstName, lastName, cardId, cvv, expirationDate, balance) {
+    userId: number;
+    firstName: string;
+    lastName: string;
+    cardId: string;
+    cvv: number;
+    expirationDate: string;
+    balance: number;
+    constructor(
+        userId: number,
+        firstName: string,
+        lastName: string,
+        cardId: string,
+        cvv: number,
+        expirationDate: string,
+        balance: number
+    ) {
         this.userId = userId;
         this.firstName = firstName;
         this.lastName = lastName;
@@ -18,26 +33,28 @@ class CreditCard {
         this.expirationDate = expirationDate;
         this.balance = balance;
     }
-    mostrarInformacion() {
+
+    mostrarInformacion(): void {
         qs('userId').textContent = String(this.userId);
         qs('firstName').textContent = this.firstName;
         qs('lastName').textContent = this.lastName;
         qs('cardId').textContent = this.cardId;
         qs('cvv').textContent = String(this.cvv);
         qs('expirationDate').textContent = this.expirationDate;
+        
         const balanceElement = qs('balance');
         balanceElement.textContent = `$${this.balance.toLocaleString()}`;
+        
         if (this.balance > 0) {
             balanceElement.className = 'info-value saldo-positivo';
-        }
-        else if (this.balance < 0) {
+        } else if (this.balance < 0) {
             balanceElement.className = 'info-value saldo-negativo';
-        }
-        else {
+        } else {
             balanceElement.className = 'info-value';
         }
     }
-    recargar(cantidad) {
+
+    recargar(cantidad: number): boolean {
         if (cantidad > 0) {
             this.balance += cantidad;
             this.mostrarInformacion();
@@ -45,7 +62,8 @@ class CreditCard {
         }
         return false;
     }
-    retirar(cantidad) {
+
+    retirar(cantidad: number): boolean {
         if (cantidad > 0 && cantidad <= this.balance) {
             this.balance -= cantidad;
             this.mostrarInformacion();
@@ -53,7 +71,8 @@ class CreditCard {
         }
         return false;
     }
-    pagar(cantidad) {
+
+    pagar(cantidad: number): boolean {
         if (cantidad > 0 && cantidad <= this.balance) {
             this.balance -= cantidad;
             this.mostrarInformacion();
@@ -62,105 +81,142 @@ class CreditCard {
         return false;
     }
 }
-const tarjetaEjemplo = new CreditCard(1, "Juan Carlos", "Pérez González", "4123-1235-1231-4132", 123, "12/29", 10000);
+
+const tarjetaEjemplo = new CreditCard(
+    1,
+    "Juan Carlos",
+    "Pérez González",
+    "4123-1235-1231-4132",
+    123,
+    "12/29",
+    10000
+);
+
 tarjetas.push(tarjetaEjemplo);
 tarjetaActual = tarjetaEjemplo;
 actualizarSelectTarjetas();
 tarjetaActual.mostrarInformacion();
-function mostrarMensaje(elementId, mensaje, tipo = 'success') {
+
+function mostrarMensaje(elementId: string, mensaje: string, tipo: 'success' | 'error' = 'success'): void {
     const element = qs(elementId);
     element.innerHTML = `<div class="message ${tipo}">${mensaje}</div>`;
     setTimeout(() => {
         element.innerHTML = '';
     }, 3000);
 }
-function crearTarjeta() {
-    const userId = parseInt(qs('newUserId').value);
-    const firstName = qs('newFirstName').value;
-    const lastName = qs('newLastName').value;
-    const cardId = qs('newCardId').value;
-    const cvv = parseInt(qs('newCvv').value);
-    const expirationDate = qs('newExpirationDate').value;
-    const balance = parseFloat(qs('newBalance').value) || 0;
+
+function crearTarjeta(): void {
+    const userId = parseInt(qs<HTMLInputElement>('newUserId').value);
+    const firstName = qs<HTMLInputElement>('newFirstName').value;
+    const lastName = qs<HTMLInputElement>('newLastName').value;
+    const cardId = qs<HTMLInputElement>('newCardId').value;
+    const cvv = parseInt(qs<HTMLInputElement>('newCvv').value);
+    const expirationDate = qs<HTMLInputElement>('newExpirationDate').value;
+    const balance = parseFloat(qs<HTMLInputElement>('newBalance').value) || 0;
+
     if (!userId || !firstName || !lastName || !cardId || !cvv || !expirationDate) {
         mostrarMensaje('createMessage', 'Por favor complete todos los campos', 'error');
         return;
     }
+
+   
     const existeTarjeta = tarjetas.find(t => t.cardId === cardId);
     if (existeTarjeta) {
         mostrarMensaje('createMessage', 'Ya existe una tarjeta con ese ID', 'error');
         return;
     }
+
     const nuevaTarjeta = new CreditCard(userId, firstName, lastName, cardId, cvv, expirationDate, balance);
     tarjetas.push(nuevaTarjeta);
     tarjetaActual = nuevaTarjeta;
+    
     actualizarSelectTarjetas();
     nuevaTarjeta.mostrarInformacion();
-    qs('newUserId').value = '';
-    qs('newFirstName').value = '';
-    qs('newLastName').value = '';
-    qs('newCardId').value = '';
-    qs('newCvv').value = '';
-    qs('newExpirationDate').value = '';
-    qs('newBalance').value = '';
+    
+    
+    qs<HTMLInputElement>('newUserId').value = '';
+    qs<HTMLInputElement>('newFirstName').value = '';
+    qs<HTMLInputElement>('newLastName').value = '';
+    qs<HTMLInputElement>('newCardId').value = '';
+    qs<HTMLInputElement>('newCvv').value = '';
+    qs<HTMLInputElement>('newExpirationDate').value = '';
+    qs<HTMLInputElement>('newBalance').value = '';
+
     mostrarMensaje('createMessage', 'Tarjeta creada exitosamente', 'success');
 }
-function recargarSaldo() {
+
+function recargarSaldo(): void {
     if (!tarjetaActual) {
         mostrarMensaje('rechargeMessage', 'No hay tarjeta seleccionada', 'error');
         return;
     }
-    const cantidad = parseFloat(qs('rechargeAmount').value);
+
+    const cantidad = parseFloat(qs<HTMLInputElement>('rechargeAmount').value);
+    
     if (isNaN(cantidad) || cantidad <= 0) {
         mostrarMensaje('rechargeMessage', 'Ingrese una cantidad válida', 'error');
         return;
     }
+
     tarjetaActual.recargar(cantidad);
-    qs('rechargeAmount').value = '';
+    qs<HTMLInputElement>('rechargeAmount').value = '';
     mostrarMensaje('rechargeMessage', `Recarga exitosa de $${cantidad.toLocaleString()}`, 'success');
 }
-function retirarSaldo() {
+
+function retirarSaldo(): void {
     if (!tarjetaActual) {
         mostrarMensaje('retireMessage', 'No hay tarjeta seleccionada', 'error');
         return;
     }
-    const cantidad = parseFloat(qs('retireAmount').value);
+
+    const cantidad = parseFloat(qs<HTMLInputElement>('retireAmount').value);
+    
     if (isNaN(cantidad) || cantidad <= 0) {
         mostrarMensaje('retireMessage', 'Ingrese una cantidad válida', 'error');
         return;
     }
+
     if (cantidad > tarjetaActual.balance) {
         mostrarMensaje('retireMessage', 'Saldo insuficiente', 'error');
         return;
     }
+
     tarjetaActual.retirar(cantidad);
-    qs('retireAmount').value = '';
+    qs<HTMLInputElement>('retireAmount').value = '';
     mostrarMensaje('retireMessage', `Retiro exitoso de $${cantidad.toLocaleString()}`, 'success');
 }
-function pagarConTarjeta() {
+
+function pagarConTarjeta(): void {
     if (!tarjetaActual) {
         mostrarMensaje('payMessage', 'No hay tarjeta seleccionada', 'error');
         return;
     }
-    const cantidad = parseFloat(qs('payAmount').value);
-    const descripcion = qs('payDescription').value;
+
+    const cantidad = parseFloat(qs<HTMLInputElement>('payAmount').value);
+    const descripcion = qs<HTMLInputElement>('payDescription').value;
+    
     if (isNaN(cantidad) || cantidad <= 0) {
         mostrarMensaje('payMessage', 'Ingrese una cantidad válida', 'error');
         return;
     }
+
     if (cantidad > tarjetaActual.balance) {
         mostrarMensaje('payMessage', 'Saldo insuficiente', 'error');
         return;
     }
+
     tarjetaActual.pagar(cantidad);
-    qs('payAmount').value = '';
-    qs('payDescription').value = '';
+    qs<HTMLInputElement>('payAmount').value = '';
+    qs<HTMLInputElement>('payDescription').value = '';
+    
     const mensajeDesc = descripcion ? ` - ${descripcion}` : '';
     mostrarMensaje('payMessage', `Pago exitoso de $${cantidad.toLocaleString()}${mensajeDesc}`, 'success');
 }
-function actualizarSelectTarjetas() {
-    const select = qs('cardSelect');
+
+function actualizarSelectTarjetas(): void {
+    const select = qs<HTMLSelectElement>('cardSelect');
     select.innerHTML = '<option value="">Seleccione una tarjeta</option>';
+    
     tarjetas.forEach((tarjeta, index) => {
         const option = document.createElement('option');
         option.value = String(index);
@@ -171,25 +227,32 @@ function actualizarSelectTarjetas() {
         select.appendChild(option);
     });
 }
-function elegirTarjeta() {
-    const selectValue = qs('cardSelect').value;
+
+function elegirTarjeta(): void {
+    const selectValue = qs<HTMLSelectElement>('cardSelect').value;
+    
     if (selectValue === '') {
         mostrarMensaje('chooseMessage', 'Seleccione una tarjeta', 'error');
         return;
     }
+
     const index = parseInt(selectValue);
     tarjetaActual = tarjetas[index];
     tarjetaActual.mostrarInformacion();
+    
     mostrarMensaje('chooseMessage', `Tarjeta seleccionada: ${tarjetaActual.cardId}`, 'success');
 }
-qs('newCardId').addEventListener('input', (e) => {
-    const input = e.target;
+
+
+qs<HTMLInputElement>('newCardId').addEventListener('input', (e: Event) => {
+    const input = e.target as HTMLInputElement;
     let value = input.value.replace(/\D/g, '');
     value = value.replace(/(\d{4})(?=\d)/g, '$1-');
     input.value = value;
 });
-qs('newExpirationDate').addEventListener('input', (e) => {
-    const input = e.target;
+
+qs<HTMLInputElement>('newExpirationDate').addEventListener('input', (e: Event) => {
+    const input = e.target as HTMLInputElement;
     let value = input.value.replace(/\D/g, '');
     if (value.length >= 2) {
         value = value.substring(0, 2) + '/' + value.substring(2, 4);
