@@ -1,0 +1,239 @@
+class CreditCard {
+    constructor(userId, firstName, lastName, cardId, cvv, expirationDate, balance) {
+        this.userId = userId;
+        this.firstName = firstName;
+        this.lastName = lastName;
+        this.cardId = cardId;
+        this.cvv = cvv;
+        this.expirationDate = expirationDate;
+        this.balance = balance;
+    }
+
+    mostrarInformacion() {
+        document.getElementById('userId').textContent = this.userId;
+        document.getElementById('firstName').textContent = this.firstName;
+        document.getElementById('lastName').textContent = this.lastName;
+        document.getElementById('cardId').textContent = this.cardId;
+        document.getElementById('cvv').textContent = this.cvv;
+        document.getElementById('expirationDate').textContent = this.expirationDate;
+        
+        const balanceElement = document.getElementById('balance');
+        balanceElement.textContent = `$${this.balance.toLocaleString()}`;
+        
+        if (this.balance > 0) {
+            balanceElement.className = 'info-value saldo-positivo';
+        } else if (this.balance < 0) {
+            balanceElement.className = 'info-value saldo-negativo';
+        } else {
+            balanceElement.className = 'info-value';
+        }
+    }
+
+    recargar(cantidad) {
+        if (cantidad > 0) {
+            this.balance += cantidad;
+            this.mostrarInformacion();
+            return true;
+        }
+        return false;
+    }
+
+    retirar(cantidad) {
+        if (cantidad > 0 && cantidad <= this.balance) {
+            this.balance -= cantidad;
+            this.mostrarInformacion();
+            return true;
+        }
+        return false;
+    }
+
+    pagar(cantidad) {
+        if (cantidad > 0 && cantidad <= this.balance) {
+            this.balance -= cantidad;
+            this.mostrarInformacion();
+            return true;
+        }
+        return false;
+    }
+}
+
+// Array para almacenar múltiples tarjetas
+let tarjetas = [];
+let tarjetaActual = null;
+
+// Crear tarjeta de ejemplo
+const tarjetaEjemplo = new CreditCard(
+    1,
+    "Juan Carlos",
+    "Pérez González",
+    "4123-1235-1231-4132",
+    123,
+    "12/29",
+    10000
+);
+
+tarjetas.push(tarjetaEjemplo);
+tarjetaActual = tarjetaEjemplo;
+actualizarSelectTarjetas();
+tarjetaActual.mostrarInformacion();
+
+function mostrarMensaje(elementId, mensaje, tipo = 'success') {
+    const element = document.getElementById(elementId);
+    element.innerHTML = `<div class="message ${tipo}">${mensaje}</div>`;
+    setTimeout(() => {
+        element.innerHTML = '';
+    }, 3000);
+}
+
+function crearTarjeta() {
+    const userId = parseInt(document.getElementById('newUserId').value);
+    const firstName = document.getElementById('newFirstName').value;
+    const lastName = document.getElementById('newLastName').value;
+    const cardId = document.getElementById('newCardId').value;
+    const cvv = parseInt(document.getElementById('newCvv').value);
+    const expirationDate = document.getElementById('newExpirationDate').value;
+    const balance = parseFloat(document.getElementById('newBalance').value) || 0;
+
+    if (!userId || !firstName || !lastName || !cardId || !cvv || !expirationDate) {
+        mostrarMensaje('createMessage', 'Por favor complete todos los campos', 'error');
+        return;
+    }
+
+    // Verificar si ya existe una tarjeta con el mismo ID
+    const existeTarjeta = tarjetas.find(t => t.cardId === cardId);
+    if (existeTarjeta) {
+        mostrarMensaje('createMessage', 'Ya existe una tarjeta con ese ID', 'error');
+        return;
+    }
+
+    const nuevaTarjeta = new CreditCard(userId, firstName, lastName, cardId, cvv, expirationDate, balance);
+    tarjetas.push(nuevaTarjeta);
+    tarjetaActual = nuevaTarjeta;
+    
+    actualizarSelectTarjetas();
+    nuevaTarjeta.mostrarInformacion();
+    
+    // Limpiar formulario
+    document.getElementById('newUserId').value = '';
+    document.getElementById('newFirstName').value = '';
+    document.getElementById('newLastName').value = '';
+    document.getElementById('newCardId').value = '';
+    document.getElementById('newCvv').value = '';
+    document.getElementById('newExpirationDate').value = '';
+    document.getElementById('newBalance').value = '';
+
+    mostrarMensaje('createMessage', 'Tarjeta creada exitosamente', 'success');
+}
+
+function recargarSaldo() {
+    if (!tarjetaActual) {
+        mostrarMensaje('rechargeMessage', 'No hay tarjeta seleccionada', 'error');
+        return;
+    }
+
+    const cantidad = parseFloat(document.getElementById('rechargeAmount').value);
+    
+    if (isNaN(cantidad) || cantidad <= 0) {
+        mostrarMensaje('rechargeMessage', 'Ingrese una cantidad válida', 'error');
+        return;
+    }
+
+    tarjetaActual.recargar(cantidad);
+    document.getElementById('rechargeAmount').value = '';
+    mostrarMensaje('rechargeMessage', `Recarga exitosa de $${cantidad.toLocaleString()}`, 'success');
+}
+
+function retirarSaldo() {
+    if (!tarjetaActual) {
+        mostrarMensaje('retireMessage', 'No hay tarjeta seleccionada', 'error');
+        return;
+    }
+
+    const cantidad = parseFloat(document.getElementById('retireAmount').value);
+    
+    if (isNaN(cantidad) || cantidad <= 0) {
+        mostrarMensaje('retireMessage', 'Ingrese una cantidad válida', 'error');
+        return;
+    }
+
+    if (cantidad > tarjetaActual.balance) {
+        mostrarMensaje('retireMessage', 'Saldo insuficiente', 'error');
+        return;
+    }
+
+    tarjetaActual.retirar(cantidad);
+    document.getElementById('retireAmount').value = '';
+    mostrarMensaje('retireMessage', `Retiro exitoso de $${cantidad.toLocaleString()}`, 'success');
+}
+
+function pagarConTarjeta() {
+    if (!tarjetaActual) {
+        mostrarMensaje('payMessage', 'No hay tarjeta seleccionada', 'error');
+        return;
+    }
+
+    const cantidad = parseFloat(document.getElementById('payAmount').value);
+    const descripcion = document.getElementById('payDescription').value;
+    
+    if (isNaN(cantidad) || cantidad <= 0) {
+        mostrarMensaje('payMessage', 'Ingrese una cantidad válida', 'error');
+        return;
+    }
+
+    if (cantidad > tarjetaActual.balance) {
+        mostrarMensaje('payMessage', 'Saldo insuficiente', 'error');
+        return;
+    }
+
+    tarjetaActual.pagar(cantidad);
+    document.getElementById('payAmount').value = '';
+    document.getElementById('payDescription').value = '';
+    
+    const mensajeDesc = descripcion ? ` - ${descripcion}` : '';
+    mostrarMensaje('payMessage', `Pago exitoso de $${cantidad.toLocaleString()}${mensajeDesc}`, 'success');
+}
+
+function actualizarSelectTarjetas() {
+    const select = document.getElementById('cardSelect');
+    select.innerHTML = '<option value="">Seleccione una tarjeta</option>';
+    
+    tarjetas.forEach((tarjeta, index) => {
+        const option = document.createElement('option');
+        option.value = index;
+        option.textContent = `${tarjeta.cardId} - ${tarjeta.firstName} ${tarjeta.lastName}`;
+        if (tarjeta === tarjetaActual) {
+            option.selected = true;
+        }
+        select.appendChild(option);
+    });
+}
+
+function elegirTarjeta() {
+    const selectValue = document.getElementById('cardSelect').value;
+    
+    if (selectValue === '') {
+        mostrarMensaje('chooseMessage', 'Seleccione una tarjeta', 'error');
+        return;
+    }
+
+    const index = parseInt(selectValue);
+    tarjetaActual = tarjetas[index];
+    tarjetaActual.mostrarInformacion();
+    
+    mostrarMensaje('chooseMessage', `Tarjeta seleccionada: ${tarjetaActual.cardId}`, 'success');
+}
+
+// Eventos para formato de entrada
+document.getElementById('newCardId').addEventListener('input', function(e) {
+    let value = e.target.value.replace(/\D/g, '');
+    value = value.replace(/(\d{4})(?=\d)/g, '$1-');
+    e.target.value = value;
+});
+
+document.getElementById('newExpirationDate').addEventListener('input', function(e) {
+    let value = e.target.value.replace(/\D/g, '');
+    if (value.length >= 2) {
+        value = value.substring(0, 2) + '/' + value.substring(2, 4);
+    }
+    e.target.value = value;
+});
